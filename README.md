@@ -1,13 +1,13 @@
 # CUDAcons
-Considerations on [CUDA](https://de.wikipedia.org/wiki/CUDA). Short descriptions of findings gained while working on parallization of a Java application using [Parallel Java 2 Library](https://www.cs.rit.edu/~ark/pj2.shtml) (PJ2) and CUDA. Work was carried out on a Windows box with no CUDA device. A CUDA capable [AWS G2 instance](https://aws.amazon.com/de/blogs/aws/new-g2-instance-type-with-4x-more-gpu-power/) was used for testing.
+Considerations on compiling [CUDA](https://de.wikipedia.org/wiki/CUDA) programs without a capable device (GPU). Short descriptions of findings gained while working on parallization of a Java application using [Parallel Java 2 Library](https://www.cs.rit.edu/~ark/pj2.shtml) (PJ2) and CUDA. Work was carried out on a Windows box with no CUDA device. A CUDA capable [AWS G2 instance](https://aws.amazon.com/de/blogs/aws/new-g2-instance-type-with-4x-more-gpu-power/) was used for testing.
 
 ### Compile CUDA programs on Windows without a capable device.
-To compile CUDA programs one need a CUDA capable device, the device driver and the CUDA Toolkit with each dependent on it's predecessor. To compile programs that load kernels on CUDA devices Visual Studio needs to be in place as well. Take a look at [NVIDIA's documentation](https://docs.nvidia.com/cuda/cuda-c-programming-guide/) to get an in-depth understanding of developing CUDA programs. This section explores how far to come without a CUDA device.
+To compile CUDA programs one need a CUDA capable device (GPU), the device driver and the CUDA Toolkit with each dependent on it's predecessor. To compile programs that load kernels on CUDA devices Visual Studio needs to be in place as well. Take a look at [NVIDIA's documentation](https://docs.nvidia.com/cuda/cuda-c-programming-guide/) to get an in-depth understanding of developing CUDA programs. This section explores how far to come without a CUDA device.
 
 Download and install [Cygwin](http://cygwin.com/) (x86_64) with GCC compiler suite. Consider a full install to avoid problems due to missing packages. Download [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) and extract content (e.g. using [UniExtract](http://www.legroom.net/software/uniextract)).
 
 #### To compile and link an executable...
-...run commands in box below. This will compile one of the the CUDA samples that don't load a kernel. Resulting program should work on any CUDA capable machine. Compiler option `-static` assures that any GCC runtime libraries are *inside* the binary. CUDA library referenced by options `-L$CUDA_HOME/lib/x64 -lcudart` is a wrapper for `cudart64_75.dll` as seen in output of `nm $CUDA_HOME/lib/x64/cudart.lib`. The directory containing the DLL needs to be part of `PATH`. Check dynamic references with `ldd`.
+...run commands in box below. This will compile one of the the CUDA samples that don't load a kernel. Resulting program should work on any CUDA capable machine. Compiler option `-static` assures that any GCC runtime libraries are *inside* the binary. Library referenced by options `-L$CUDA_HOME/lib/x64 -lcudart` is the *NVIDIA CUDA Runtime API* and a wrapper for `cudart64_75.dll` as seen in output of `nm $CUDA_HOME/lib/x64/cudart.lib`. The directory containing the DLL needs to be part of `PATH`. Check dynamic references with `ldd`.
 ```
 # CUDA Toolkit 7.5
 export CUDA_HOME=/usr/lab/cudacons/cuda_7.5.18_windows/CUDAToolkit
@@ -26,7 +26,7 @@ ldd ./deviceQuery.exe
 ```
 
 #### To build a dynamic link library (DLL)...
-...run commands in box below (again no CUDA kernels). The example is from the [PJ2 distribution](pj2) which is solely for Linux. There is a shared object `libEduRitGpuCuda.so` in PJ2 that connects the Java side with CUDA. The illustrated example migrates the `.so` to a  `.dll`. The library referenced by options `-L$CUDA_HOME/lib/x64 -lcuda` is a wrapper for `nvcuda.dll` (see output of `nm $CUDA_HOME/lib/x64/cuda.lib`). The DLL is part of the NVIDIA driver package. It's name is `nvcuda64.dl_`. Expand file to `nvcuda.dll` and make sure that dynamic linker can find it. Run `ldd` to check references.
+...run commands in box below (again no CUDA kernels). The example is from the [PJ2 distribution](pj2) which is solely for Linux. There is a shared object `libEduRitGpuCuda.so` in PJ2 that connects the Java side with CUDA. The illustrated example migrates the `.so` to a  `.dll`. The library referenced by options `-L$CUDA_HOME/lib/x64 -lcuda` is the *NVIDIA CUDA Driver API* and a wrapper for `nvcuda.dll` (see output of `nm $CUDA_HOME/lib/x64/cuda.lib`). The DLL is part of the NVIDIA driver package. It's name is `nvcuda64.dl_`. Expand file to `nvcuda.dll` and make sure that dynamic linker can find it. Run `ldd` to check references.
 ```
 export JAVA_HOME=/cygdrive/c/program\ files/java/jdk1.7.0_71
 export PJ2AWS_HOME=/usr/src/pj2aws
@@ -73,4 +73,62 @@ nvcc -Wno-deprecated-gpu-targets -ptx ^
 Maybe [LLVM can do the trick](http://llvm.org/docs/CompileCudaWithLLVM.html) as well...
 
 ### Compile CUDA programs on Linux without a capable device.
-Not done yet.
+Almost the same as on Windows but without Visual Studio of course. Make sure GCC compiler suite and develoment tools are available. If on Red Hat Linux consider installation of *Develoment Tools*. Download runfile of CUDA toolkit and extract content.
+```
+# Install GNU C development tools
+sudo yum groupinstall "Development Tools"
+
+# Download CUDA runfile. Adjust URL as appropriate.
+wget http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run
+# Unpack CUDA runfile
+sh cuda_7.5.18_linux.run --extract=`pwd`
+# Unpack CUDA driver in HOME directory
+sh NVIDIA-Linux-x86_64-352.39.run --extract-only
+# Install CUDA toolkit and samples
+sudo sh cuda-linux64-rel-7.5.18-19867135.run
+sh cuda-samples-linux-7.5.18-19867135.run
+```
+
+#### To compile and link an executable...
+...run commands in box below. It should build one of the CUDA samples and run on any CUDA machine. Use `ldd` to check dynamic references.
+```
+export CUDA_HOME=/usr/local/cuda
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+
+g++ -I$CUDA_HOME/include \
+	-Icuda-samples-linux-7.5.18/common/inc \
+	-o deviceQuery cuda-samples-linux-7.5.18/1_Utilities/deviceQuery/deviceQuery.cpp \
+	-L$CUDA_HOME/lib64 -lcudart
+
+ldd ./deviceQuery
+```
+
+#### To build a dynamic link library (DLL)...
+...run commands in box below. As described above in the section on Windows this will build the native library from PJ2.
+```
+export JAVA_HOME=/usr/lib/jvm/java
+export PJ2AWS_HOME=../pj2aws
+export LD_LIBRARY_PATH=$PJ2AWS_HOME/pj2/lib:NVIDIA-Linux-x86_64-352.39:$LD_LIBRARY_PATH
+
+( cd NVIDIA-Linux-x86_64-352.39 ; ln -s libcuda.so.352.39 libcuda.so )
+
+gcc -Wall -shared -fPIC \
+	-I$PJ2AWS_HOME/pj2/lib \
+	-I$JAVA_HOME/include \
+	-I$JAVA_HOME/include/linux \
+	-I$CUDA_HOME/include \
+	-o libEduRitGpuCuda.so $PJ2AWS_HOME/pj2/lib/edu_rit_gpu_Cuda.c \
+	-LNVIDIA-Linux-x86_64-352.39 -lcuda
+
+ldd libEduRitGpuCuda.so
+```
+
+#### To compile a CUDA kernel...
+...add NVCC to `PATH` and run commands in box below.
+```
+export PATH=$CUDA_HOME/bin:$PATH
+
+nvcc -Wno-deprecated-gpu-targets -ptx \
+	-Icuda-samples-linux-7.5.18/common/inc \
+	-o clock.ptx cuda-samples-linux-7.5.18/0_Simple/clock/clock.cu
+```
