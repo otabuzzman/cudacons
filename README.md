@@ -52,7 +52,7 @@ x86_64-w64-mingw32-gcc -Wall -shared \
 ldd EduRitGpuCuda.dll
 ```
 
-**Clues**: (a) Check `PATH` if `ldd` won't show expected DLL's. (b) If `ldd` reports "???" instead of names run `strings <path> | grep -i dll` on each DLL file search output for DLLs and check if they exist and can be found. Continue recursively until "???" are gone.
+**Clue(s)**: **(a)** Check `PATH` if `ldd` won't show expected DLL's. **(b)** If `ldd` reports "???" instead of names run `strings <path> | grep -i dll` on each DLL file search output for DLLs and check if they exist and can be found. Continue recursively until "???" are gone.
 
 #### To compile a CUDA kernel...
 ...install Visual Studio (e.g. Community edition). In case of VS 2015 use NVCC from CUDA Toolkit 8 (earlier versions of VS not examined). Start a Developer Command Prompt to get a propper VS environment and run NVCC on a `.cu` file.
