@@ -28,7 +28,7 @@ ldd ./deviceQuery.exe
 #### To build a dynamic link library (DLL)...
 ...run commands in box below (again no CUDA kernels). The example is from the [PJ2 distribution](pj2) which is solely for Linux. There is a shared object `libEduRitGpuCuda.so` in PJ2 that connects the Java side with CUDA. The illustrated example migrates the `.so` to a  `.dll`. The library referenced by options `-L$CUDA_HOME/lib/x64 -lcuda` is the *NVIDIA CUDA Driver API* and a wrapper for `nvcuda.dll` (see output of `nm $CUDA_HOME/lib/x64/cuda.lib`). The DLL is part of the NVIDIA driver package. It's name is `nvcuda64.dl_`. Expand file to `nvcuda.dll` and make sure that dynamic linker can find it. Run `ldd` to check references.
 ```
-export JAVA_HOME=/cygdrive/c/program\ files/java/jdk1.7.0_71
+export JAVA_HOME=/cygdrive/c/program\ files/java/jdk1.8.0_151
 export PJ2AWS_HOME=/usr/src/pj2aws
 export PATH=$CUDA_HOME/../Display.Driver:$PATH
 
@@ -37,10 +37,11 @@ rm -f $CUDA_HOME/../Display.Driver/nvcuda.dll
 	`cygpath -w $CUDA_HOME/../Display.Driver/nvcuda64.dl_` \
 	`cygpath -w $CUDA_HOME/../Display.Driver/nvcuda.dll`
 # CUDA Toolkit 8
+rm -f $CUDA_HOME/../Display.Driver/nvfatbinaryloader.dll
 /cygdrive/c/windows/system32/expand \
 	`cygpath -w $CUDA_HOME/../Display.Driver/nvfatbinaryloader64.dl_` \
 	`cygpath -w $CUDA_HOME/../Display.Driver/nvfatbinaryloader.dll`
-	
+
 x86_64-w64-mingw32-gcc -Wall -shared \
 	-I$PJ2AWS_HOME/pj2/lib \
 	-I"$JAVA_HOME/include" \
@@ -55,7 +56,7 @@ ldd EduRitGpuCuda.dll
 **Clue(s)**: **(a)** Check `PATH` if `ldd` won't show expected DLL's. **(b)** If `ldd` reports "???" instead of names run `strings <path> | grep -i dll` on each DLL file search output for DLLs and check if they exist and can be found. Continue recursively until "???" are gone.
 
 #### To compile a CUDA kernel...
-...install Visual Studio (e.g. Community edition). In case of VS 2015 use NVCC from CUDA Toolkit 8 (earlier versions of VS not examined). Start a Developer Command Prompt to get a propper VS environment and run NVCC on a `.cu` file.
+...install Visual Studio Community 2015. Select C++ programming language in installation wizard. Start a Developer Command Prompt to get a propper VS environment and run NVCC on a `.cu` file.
 ```
 rem turn off file name completion due to TABs in commands below.
 cmd /f:off
@@ -79,25 +80,26 @@ Almost the same as on Windows but without Visual Studio of course. Make sure GCC
 sudo yum groupinstall "Development Tools"
 
 # Download CUDA runfile. Adjust URL as appropriate.
-wget http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run
+wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
 # Unpack CUDA runfile
-sh cuda_7.5.18_linux.run --extract=`pwd`
-# Unpack CUDA driver in HOME directory
-sh NVIDIA-Linux-x86_64-352.39.run --extract-only
+sh cuda_8.0.61_375.26_linux-run --extract=`pwd`
+# Unpack CUDA driver in CWD
+sh NVIDIA-Linux-x86_64-375.26.run --extract-only
 # Install CUDA toolkit and samples
-sudo sh cuda-linux64-rel-7.5.18-19867135.run
-sh cuda-samples-linux-7.5.18-19867135.run
+sudo sh cuda-linux64-rel-8.0.61-21551265.run
+sudo sh cuda-samples-linux-8.0.61-21551265.run
 ```
 
 #### To compile and link an executable...
 ...run commands in box below. It should build one of the CUDA samples and run on any CUDA machine. Use `ldd` to check dynamic references.
 ```
 export CUDA_HOME=/usr/local/cuda
+export PATH=$CUDA_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 
 g++ -I$CUDA_HOME/include \
-	-Icuda-samples-linux-7.5.18/common/inc \
-	-o deviceQuery cuda-samples-linux-7.5.18/1_Utilities/deviceQuery/deviceQuery.cpp \
+	-I/usr/local/cuda-8.0/samples/common/inc \
+	-o deviceQuery /usr/local/cuda-8.0/samples/1_Utilities/deviceQuery/deviceQuery.cpp \
 	-L$CUDA_HOME/lib64 -lcudart
 
 ldd ./deviceQuery
@@ -108,9 +110,9 @@ ldd ./deviceQuery
 ```
 export JAVA_HOME=/usr/lib/jvm/java
 export PJ2AWS_HOME=../pj2aws
-export LD_LIBRARY_PATH=$PJ2AWS_HOME/pj2/lib:NVIDIA-Linux-x86_64-352.39:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$PJ2AWS_HOME/pj2/lib:NVIDIA-Linux-x86_64-375.26:$LD_LIBRARY_PATH
 
-( cd NVIDIA-Linux-x86_64-352.39 ; ln -s libcuda.so.352.39 libcuda.so )
+( cd NVIDIA-Linux-x86_64-375.26 ; ln -s libcuda.so.375.26 libcuda.so ; ln -s libcuda.so.375.26 libcuda.so.1 )
 
 gcc -Wall -shared -fPIC \
 	-I$PJ2AWS_HOME/pj2/lib \
@@ -118,7 +120,7 @@ gcc -Wall -shared -fPIC \
 	-I$JAVA_HOME/include/linux \
 	-I$CUDA_HOME/include \
 	-o libEduRitGpuCuda.so $PJ2AWS_HOME/pj2/lib/edu_rit_gpu_Cuda.c \
-	-LNVIDIA-Linux-x86_64-352.39 -lcuda
+	-LNVIDIA-Linux-x86_64-375.26 -lcuda
 
 ldd libEduRitGpuCuda.so
 ```
@@ -129,6 +131,6 @@ ldd libEduRitGpuCuda.so
 export PATH=$CUDA_HOME/bin:$PATH
 
 nvcc -Wno-deprecated-gpu-targets -ptx \
-	-Icuda-samples-linux-7.5.18/common/inc \
-	-o clock.ptx cuda-samples-linux-7.5.18/0_Simple/clock/clock.cu
+	-I/usr/local/cuda-8.0/samples/common/inc \
+	-o clock.ptx /usr/local/cuda-8.0/samples/0_Simple/clock/clock.cu
 ```

@@ -1,5 +1,6 @@
 # Linux
 NVIDIA-Linux-x86_64-352.39/
+NVIDIA-Linux-x86_64-375.26/
 cuda-samples-linux-7.5.18/
 deviceQuery
 *.run
@@ -7,6 +8,7 @@ deviceQuery
 # Windows (and both)
 cuda_7.5.18_windows/
 cuda_8.0.44_windows/
+cuda_10.0.130_411.31_win10/
 clock.ptx
 *.dll
 *.exe
