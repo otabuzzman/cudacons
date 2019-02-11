@@ -108,7 +108,7 @@ ldd ./deviceQuery
 #### To build a dynamic link library (DLL)...
 ...run commands in box below. As described above in the section on Windows this will build the native library from PJ2.
 ```
-export JAVA_HOME=/usr/lib/jvm/java
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
 export PJ2AWS_HOME=../pj2aws
 export LD_LIBRARY_PATH=$PJ2AWS_HOME/pj2/lib:NVIDIA-Linux-x86_64-375.26:$LD_LIBRARY_PATH
 
