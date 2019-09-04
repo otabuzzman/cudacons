@@ -105,7 +105,7 @@ g++ -I$CUDA_HOME/include \
 ldd ./deviceQuery
 ```
 
-#### To build a dynamic link library (DLL)...
+#### To build a shared object library (SO)...
 ...run commands in box below. As described above in the section on Windows this will build the native library from PJ2.
 ```
 export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
