@@ -12,6 +12,7 @@ Download and install [Cygwin](http://cygwin.com/) (x86_64) with GCC compiler sui
 # CUDA Toolkit 7.5
 export CUDA_HOME=/usr/lab/cudacons/cuda_7.5.18_windows/CUDAToolkit
 export PATH=$CUDA_HOME/bin:$PATH
+
 # CUDA Toolkit 8
 export CUDA_HOME=/usr/lab/cudacons/cuda_8.0.44_windows/compiler
 export PATH=$CUDA_HOME/../cudart/bin:$PATH
@@ -21,6 +22,17 @@ x86_64-w64-mingw32-c++ \
 	-I$CUDA_HOME/../CUDASamples/common/inc \
 	-o deviceQuery.exe $CUDA_HOME/../CUDASamples/1_Utilities/deviceQuery/deviceQuery.cpp \
 	-static -L$CUDA_HOME/lib/x64 -lcudart
+
+# CUDA Toolkit 11.1
+export CUDA_HOME=/usr/lab/cudacons/cuda_11.1.1_456.81_win10/cuda_nvcc/nvcc
+export PATH=$CUDA_HOME/bin:$PATH
+
+x86_64-w64-mingw32-c++ \
+	-I$CUDA_HOME/include \
+	-I$CUDA_HOME/../../cuda_cudart/cudart/include \
+	-I$CUDA_HOME/../../cuda_Samples/cuda_Samples/common/inc \
+	-o deviceQuery.exe $CUDA_HOME/../../cuda_Samples/cuda_Samples/1_Utilities/deviceQuery/deviceQuery.cpp \
+	-static -L$CUDA_HOME/../../cuda_cudart/cudart/lib/x64 -lcudart
 
 ldd ./deviceQuery.exe
 ```
@@ -36,6 +48,7 @@ rm -f $CUDA_HOME/../Display.Driver/nvcuda.dll
 /cygdrive/c/windows/system32/expand \
 	`cygpath -w $CUDA_HOME/../Display.Driver/nvcuda64.dl_` \
 	`cygpath -w $CUDA_HOME/../Display.Driver/nvcuda.dll`
+
 # CUDA Toolkit 8
 rm -f $CUDA_HOME/../Display.Driver/nvfatbinaryloader.dll
 /cygdrive/c/windows/system32/expand \
@@ -50,17 +63,28 @@ x86_64-w64-mingw32-gcc -Wall -shared \
 	-o EduRitGpuCuda.dll $PJ2AWS_HOME/pj2/lib/edu_rit_gpu_Cuda.c \
 	-L$CUDA_HOME/lib/x64 -lcuda
 
+# CUDA Toolkit 11.1
+x86_64-w64-mingw32-gcc -Wall -shared \
+	-I$PJ2AWS_HOME/pj2/lib \
+	-I"$JAVA_HOME/include" \
+	-I"$JAVA_HOME/include/win32" \
+	-I$CUDA_HOME/include \
+	-I$CUDA_HOME/../../cuda_cudart/cudart/include \
+	-o EduRitGpuCuda.dll $PJ2AWS_HOME/pj2/lib/edu_rit_gpu_Cuda.c \
+	-L$CUDA_HOME/../../cuda_cudart/cudart/lib/x64 -lcuda
+
 ldd EduRitGpuCuda.dll
 ```
 
 **Clue(s)**: **(a)** Check `PATH` if `ldd` won't show expected DLL's. **(b)** If `ldd` reports "???" instead of names run `strings <path> | grep -i dll` on each DLL file search output for DLLs and check if they exist and can be found. Continue recursively until "???" are gone.
 
 #### To compile a CUDA kernel...
-...install Visual Studio Community 2015. Select C++ programming language in installation wizard. Start a Developer Command Prompt to get a propper VS environment and run NVCC on a `.cu` file.
+...install Visual Studio Community 2015. Select C++ programming language in installation wizard. Start a Developer Command Prompt to get a propper VS environment and run NVCC on a `.cu` file. CUDA Toolkit 11 needs Visual Studio Community 2017 or above and X86 Native or Cross Tools Command Prompt. The Developer Command Prompt as used for former Toolkits makes NVCC spit out lots of compilation errors.
 ```
 rem turn off file name completion due to TABs in commands below.
 cmd /f:off
 
+rem CUDA Toolkit 8
 set CUDA_HOME=%userprofile%\lab\cudacons\cuda_8.0.44_windows\compiler
 set PATH=%CUDA_HOME%\bin;%PATH%
 
@@ -69,6 +93,17 @@ cd %userprofile%\lab\cudacons
 nvcc -Wno-deprecated-gpu-targets -ptx ^
 	-I%CUDA_HOME%\..\CUDASamples\common\inc ^
 	-o clock.ptx %CUDA_HOME%\..\CUDASamples\0_Simple\clock\clock.cu
+
+rem CUDA Toolkit 11.1
+set CUDA_HOME=%userprofile%\lab\cudacons\cuda_11.1.1_456.81_win10\cuda_nvcc\nvcc
+set PATH=%CUDA_HOME%\bin;%PATH%
+
+cd %userprofile%\lab\cudacons
+
+nvcc -Wno-deprecated-gpu-targets -ptx ^
+	-I%CUDA_HOME%\..\..\cuda_cudart\cudart\include ^
+	-I%CUDA_HOME%\..\..\cuda_Samples\cuda_Samples\common\inc ^
+	-o clock.ptx %CUDA_HOME%\..\..\cuda_Samples\cuda_Samples\0_Simple\clock\clock.cu
 ```
 
 Maybe [LLVM can do the trick](http://llvm.org/docs/CompileCudaWithLLVM.html) as well...
